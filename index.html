@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>115-1 個人行事曆</title>
+<style>
+:root{
+  --bg:#F3F4F1;
+  --ink:#23282A;
+  --muted:#6B7370;
+  --rule:#D5D8D2;
+  --paper:#FBFBF9;
+  --class:#3D6B5C;
+  --class-bg:#E4EDE8;
+  --study:#4A5F7A;
+  --study-bg:#E5EAF0;
+  --life:#8A8E86;
+  --life-bg:#EAEBE6;
+  --alert:#A8422A;
+  --alert-bg:#F3E4DF;
+  --holiday:#8A6E3F;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;padding:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Hiragino Sans TC","Microsoft JhengHei",system-ui,sans-serif;
+  font-size:15px;line-height:1.7;font-weight:400;
+}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 20px 72px}
+h1{font-size:21px;font-weight:500;margin:0;letter-spacing:.02em}
+h2{font-size:15px;font-weight:500;margin:0 0 14px;letter-spacing:.04em}
+p{margin:0}
+.top{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 18px;padding-bottom:18px;border-bottom:1px solid var(--rule)}
+.top .meta{color:var(--muted);font-size:14px}
+section{padding:30px 0;border-bottom:1px solid var(--rule)}
+section:last-of-type{border-bottom:0}
+
+.route{margin:6px 0 0}
+.routewrap{overflow-x:auto}
+.count{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+.count .n{font-size:44px;font-weight:500;line-height:1;letter-spacing:-.02em}
+.count .u{color:var(--muted);font-size:14px}
+.count .phase{margin-left:auto;color:var(--muted);font-size:14px}
+
+.next{display:grid;gap:0}
+.next .row{display:grid;grid-template-columns:96px 1fr auto;gap:14px;align-items:baseline;padding:9px 0;border-top:1px solid var(--rule)}
+.next .row:first-child{border-top:0}
+.next .d{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.next .in{color:var(--muted);font-size:13px;white-space:nowrap}
+.next .soon .in,.next .soon .t{color:var(--alert)}
+
+table.dates{width:100%;border-collapse:collapse}
+table.dates td{padding:8px 0;border-top:1px solid var(--rule);vertical-align:baseline}
+table.dates tr:first-child td{border-top:0}
+table.dates .d{width:118px;color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.dates .why{color:var(--muted);font-size:13px}
+tr.past td{opacity:.4}
+tr.hol .t{color:var(--holiday)}
+
+.alert{border-left:3px solid var(--alert);background:var(--alert-bg);padding:12px 15px;margin:18px 0 0;border-radius:0 4px 4px 0}
+.alert .ah{font-weight:500;color:var(--alert);font-size:15px}
+.alert .ab{font-size:13.5px;color:var(--muted);margin-top:2px}
+.dayhead{color:var(--muted);font-size:13.5px;margin:-6px 0 12px}
+.dr{display:grid;grid-template-columns:104px 4px 1fr auto;gap:13px;align-items:center;padding:10px 0;border-top:1px solid var(--rule)}
+.dr:first-child{border-top:0}
+.dt{color:var(--muted);font-size:13px;font-variant-numeric:tabular-nums}
+.dk{align-self:stretch;border-radius:2px;min-height:20px}
+.dk.c{background:var(--class)} .dk.s{background:var(--study)} .dk.l{background:var(--life)}
+.dm{color:var(--muted);font-size:12.5px}
+.dr.on .dt{color:var(--alert);font-weight:500}
+.dr.on .dl{font-weight:500}
+.dr.on .dm{color:var(--alert)}
+.dr.gone{opacity:.38}
+.gridwrap{overflow-x:auto;padding-bottom:4px}
+.tt{min-width:640px;display:grid;grid-template-columns:52px repeat(7,1fr);gap:2px}
+.tt .hd{font-size:13px;color:var(--muted);text-align:center;padding:4px 0}
+.tt .hd.now{color:var(--ink);font-weight:500;border-bottom:2px solid var(--ink)}
+.tt .hr{font-size:11px;color:var(--muted);text-align:right;padding-right:6px;font-variant-numeric:tabular-nums;transform:translateY(-6px)}
+.col{display:grid;grid-auto-rows:22px;gap:0;position:relative}
+.blk{border-radius:3px;font-size:11.5px;line-height:1.3;padding:2px 4px;overflow:hidden;display:flex;align-items:center;justify-content:center;text-align:center}
+.blk.c{background:var(--class-bg);color:var(--class);border:1px solid #C8DBD2}
+.blk.s{background:var(--study-bg);color:var(--study);border:1px solid #CBD6E1}
+.blk.l{background:var(--life-bg);color:var(--life);border:1px solid #DBDCD6}
+.sleep{margin-top:2px;min-width:640px;background:#E7E9E4;border:1px solid var(--rule);border-radius:3px;font-size:12px;color:var(--muted);text-align:center;padding:5px}
+
+ul.todo{list-style:none;margin:0;padding:0}
+ul.todo li{border-top:1px solid var(--rule);padding:10px 0;display:flex;gap:11px;align-items:flex-start}
+ul.todo li:first-child{border-top:0}
+ul.todo input{margin:6px 0 0;width:15px;height:15px;accent-color:var(--class);flex:none}
+ul.todo .body{flex:1}
+ul.todo .note{display:block;color:var(--muted);font-size:13px}
+ul.todo .by{color:var(--alert);font-size:13px}
+ul.todo li.done .body{opacity:.42;text-decoration:line-through}
+ul.todo li.done .by{opacity:.42}
+label{cursor:pointer}
+:focus-visible{outline:2px solid var(--study);outline-offset:2px}
+.foot{color:var(--muted);font-size:12.5px;padding-top:26px}
+@media (max-width:560px){
+  .wrap{padding:22px 14px 56px}
+  .count .n{font-size:34px}
+  .count .phase{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="top">
+  <h1>115 學年度第 1 學期</h1>
+  <p class="meta" id="today">—</p>
+  <p class="meta" id="weekno"></p>
+</div>
+
+<div id="alerts"></div>
+
+<section>
+  <div class="count">
+    <span class="n" id="days">—</span>
+    <span class="u">天後考試（日期暫定，簡章公告後修正）</span>
+    <span class="phase" id="phase"></span>
+  </div>
+  <div class="routewrap"><svg class="route" id="route" width="100%" height="86" viewBox="0 0 1000 86" preserveAspectRatio="none" role="img" aria-labelledby="rt"><title id="rt">從開學到考試的路線與目前位置</title></svg></div>
+</section>
+
+<section>
+  <h2>接下來</h2>
+  <div class="next" id="next"></div>
+</section>
+
+<section>
+  <h2>今天要做的事</h2>
+  <p class="dayhead" id="dayhead"></p>
+  <div id="dayview"></div>
+</section>
+
+<section>
+  <h2>一週固定時間</h2>
+  <div class="gridwrap">
+    <div class="tt" id="tt"></div>
+    <div class="sleep">23:00 – 08:00　睡覺</div>
+  </div>
+</section>
+
+<section>
+  <h2>學期關鍵日</h2>
+  <table class="dates"><tbody id="dates"></tbody></table>
+</section>
+
+<section>
+  <h2>還沒解決的事</h2>
+  <ul class="todo" id="todo"></ul>
+</section>
+
+<p class="foot">日期依北科 115 學年度第 1 學期行事曆。考試日期為暫定值，等台大 116 學年度招生簡章公告後改 EXAM_DATE。</p>
+
+</div>
+
+<script>
+const EXAM_DATE = "2027-02-01";
+const TERM_START = "2026-09-07";
+
+const D = [
+  ["2026-09-07","開學、加退選開始","第 1 週開始"],
+  ["2026-09-18","加退選截止","週二早八要在這天前處理掉",1],
+  ["2026-09-25","中秋假","",0,1],
+  ["2026-09-28","教師節","",0,1],
+  ["2026-10-04","材力、結構題庫班開始","時段確定後要回頭改週程表",1],
+  ["2026-10-09","國慶日補假","",0,1],
+  ["2026-10-10","國慶日","",0,1],
+  ["2026-10-14","工數題庫班開始","三科題庫班同時進行，進度壓力最大的一段",1],
+  ["2026-10-25","光復節","",0,1],
+  ["2026-10-26","光復節補假","",0,1],
+  ["2026-10-31","校慶園遊會","隔天 11/1 校慶、11/9 補假",0,1],
+  ["2026-11-02","期中考開始","結構(二) 期中考，等於免費模擬",1],
+  ["2026-11-06","期中考結束",""],
+  ["2026-11-20","期中撤選結束","撤任一門都會低於 9 學分下限，用不到"],
+  ["2026-12-07","下學期選課開始","四下的環工、水資源＋跨域課",1],
+  ["2026-12-17","上課最後一天、休學申請截止",""],
+  ["2026-12-18","期末考開始、下學期選課截止","選課別拖到考試期間",1],
+  ["2026-12-24","期末考結束","隔天起進入六週衝刺"],
+  ["2026-12-25","行憲紀念日","",0,1],
+  ["2026-12-28","彈性學習週開始","到 1/8，沒有課"],
+  ["2027-01-01","開國紀念日","",0,1],
+  ["2027-01-09","學期住宿結束","寒宿要提前申請，別讓據點斷掉",1],
+  ["2027-01-11","寒假開始、寒宿開始",""],
+  ["2027-01-18","學期成績繳交截止",""],
+  ["2027-02-04","春節連假開始","小年夜；除夕 2/5，放到 2/10 初五",0,1],
+  ["2027-02-10","春節連假結束","",0,1],
+  [EXAM_DATE,"考研筆試（暫定）","簡章公告後修正",1]
+];
+
+const PH = [
+  ["2026-09-07","2026-12-17","上課期"],
+  ["2026-12-18","2026-12-24","期末考"],
+  ["2026-12-25","2027-01-10","彈性學習週"],
+  ["2027-01-11","2027-02-03","寒假衝刺"],
+  ["2027-02-04","2027-02-10","春節"]
+];
+
+const SCH = [
+  [["09:00","11:00","c","結構(二)"],["11:00","12:00","s","工數"],["12:00","13:00","l","午餐"],["13:00","16:00","c","測量實習"],["16:00","17:00","s","工數"],["17:00","20:00","c","建築·工管"],["20:00","21:00","l","晚餐"],["21:00","22:00","l","攀岩"]],
+  [["08:00","10:00","c","建築系選修"],["10:00","12:00","s","材力"],["12:00","13:00","l","午餐"],["13:00","15:00","c","建築環控"],["15:00","16:00","s","工數"],["16:00","18:00","c","水文"],["18:00","19:00","l","晚餐"],["19:00","23:00","s","結構 + 工數"]],
+  [["09:00","12:00","s","材力 VOD"],["12:00","13:00","l","午餐"],["13:00","16:00","s","結構 VOD"],["16:00","18:00","s","工數"],["18:00","19:00","l","晚餐"],["19:00","21:00","s","弱科"],["21:00","22:00","l","攀岩"]],
+  [["09:00","12:00","s","材力 VOD"],["12:00","13:00","l","午餐"],["13:00","14:00","c","結構(二)"],["14:00","18:00","s","結構 VOD"],["18:00","19:00","l","晚餐"],["19:00","23:00","s","工數"]],
+  [["09:00","12:00","s","材力 VOD"],["12:00","13:00","l","午餐"],["13:00","16:00","s","結構 VOD"],["16:00","18:00","s","工數"],["18:00","19:00","l","晚餐"],["19:00","21:00","s","弱科"],["21:00","22:00","l","攀岩"]],
+  [["09:00","12:00","s","材力"],["12:00","13:00","l","午餐"],["13:00","16:00","s","結構"],["16:00","17:00","l","運動"],["17:00","18:00","s","工數"],["18:00","19:00","l","晚餐"],["19:00","23:00","s","弱科"]],
+  [["09:00","13:00","l","戶外或休息"],["13:00","14:00","l","午餐"],["14:00","18:00","s","本週回顧"],["18:00","19:00","l","晚餐"],["19:00","23:00","s","工數"]]
+];
+
+const TODO = [
+  ["reg","打給註冊組工學院承辦（分機 1118）","問三件事：還缺 23 還是 25、英文門檻那 2 學分算不算共同必修、跨域目前認列幾學分。","9/18 前"],
+  ["mon","解決週二早八跟 08:00 起床的衝突","三選一：週二 07:00 起、週二 22:00 睡、或換掉那門 2 學分保險課。","9/18 加退選截止前"],
+  ["dorm","申請寒假住宿","學期住宿 1/9 結束、寒宿 1/11 開始，中間斷兩天。申請時程要問生輔組。","12 月前"],
+  ["exam","查台大 116 學年度招生簡章","確認筆試日期，才知道春節回高雄怎麼排。","10–11 月"],
+  ["pick","選四下的課","環工、水資源 4 學分必修 + 跨域，照四上邏輯壓成兩三天。","12/7–12/18"],
+  ["sl","確認服務學習、勞作教育都通過","0 學分不佔格子，但沒過一樣卡畢業。成績單上掃一眼。",""]
+];
+
+const day1 = 86400000;
+const pd = s => { const [y,m,d]=s.split("-").map(Number); return new Date(y,m-1,d); };
+const fmt = d => (d.getMonth()+1)+"/"+d.getDate();
+const wd = ["日","一","二","三","四","五","六"];
+const now = new Date(); const today = new Date(now.getFullYear(),now.getMonth(),now.getDate());
+const diff = (a,b) => Math.round((b-a)/day1);
+
+document.getElementById("today").textContent =
+  today.getFullYear()+" 年 "+(today.getMonth()+1)+" 月 "+today.getDate()+" 日（"+wd[today.getDay()]+"）";
+
+const exam = pd(EXAM_DATE), start = pd(TERM_START);
+const left = diff(today,exam);
+document.getElementById("days").textContent = left > 0 ? left : 0;
+
+const wk = Math.floor(diff(start,today)/7)+1;
+document.getElementById("weekno").textContent =
+  diff(today,start) > 0 ? "距開學還有 "+diff(today,start)+" 天"
+  : (wk>=1 && wk<=18 ? "第 "+wk+" 週" : "");
+
+let phase = "";
+for (const [a,b,n] of PH) if (today>=pd(a) && today<=pd(b)) phase = n;
+document.getElementById("phase").textContent = phase || (today<start ? "開學前" : "");
+
+const nx = D.map(e=>({d:pd(e[0]),t:e[1],w:e[2],k:e[3]})).filter(e=>e.d>=today).slice(0,4);
+document.getElementById("next").innerHTML = nx.map(e=>{
+  const g = diff(today,e.d);
+  const soon = g<=7 ? " soon" : "";
+  return '<div class="row'+soon+'"><span class="d">'+fmt(e.d)+'（'+wd[e.d.getDay()]+'）</span>'+
+    '<span class="t">'+e.t+(e.w?'<br><span class="why" style="font-size:13px">'+e.w+'</span>':'')+'</span>'+
+    '<span class="in">'+(g===0?"今天":g+" 天後")+'</span></div>';
+}).join("") || '<p class="why">學期結束了。</p>';
+
+document.getElementById("dates").innerHTML = D.map(e=>{
+  const d = pd(e[0]);
+  const cls = (d<today?"past ":"")+(e[4]?"hol":"");
+  return '<tr class="'+cls.trim()+'"><td class="d">'+fmt(d)+'（'+wd[d.getDay()]+'）</td>'+
+    '<td><span class="t">'+e[1]+'</span>'+(e[2]?'<br><span class="why">'+e[2]+'</span>':'')+'</td></tr>';
+}).join("");
+
+const LEAD = 7;
+const MID_A = pd("2026-11-02"), MID_B = pd("2026-11-06");
+let alerts = [];
+if (today>=MID_A && today<=MID_B){
+  alerts.push(["期中考週","結構(二) 的期中考跟你的考研結構是同一套東西，認真考等於免費模擬。"]);
+} else {
+  const gm = diff(today,MID_A);
+  if (gm>0 && gm<=LEAD) alerts.push(["期中考剩 "+gm+" 天","11/2 到 11/6。結構(二) 這一科不要當涼課考，它就是你二月要考的東西。"]);
+}
+D.forEach(e=>{
+  if (e[3]!==1) return;
+  const d = pd(e[0]);
+  if (pd(e[0]).getTime()===MID_A.getTime()) return;
+  const g = diff(today,d);
+  if (g>=0 && g<=LEAD) alerts.push([e[1]+(g===0?"　就是今天":"　剩 "+g+" 天"), e[2]||""]);
+});
+document.getElementById("alerts").innerHTML = alerts.map(([h,b])=>
+  '<div class="alert"><div class="ah">'+h+'</div>'+(b?'<div class="ab">'+b+'</div>':'')+'</div>').join("");
+
+const dIdx = (today.getDay()===0?7:today.getDay())-1;
+const kName = {c:"課",s:"讀書",l:""};
+const nowH = now.getHours()+now.getMinutes()/60;
+let sH=0, cH=0;
+document.getElementById("dayview").innerHTML = SCH[dIdx].map(([a,b,k,label])=>{
+  const s=+a.slice(0,2), e=+b.slice(0,2);
+  if(k==="s") sH+=e-s; if(k==="c") cH+=e-s;
+  const on = nowH>=s && nowH<e, gone = nowH>=e;
+  return '<div class="dr'+(on?" on":"")+(gone?" gone":"")+'">'+
+    '<span class="dt">'+a+' – '+b+'</span><span class="dk '+k+'"></span>'+
+    '<span class="dl">'+label+'</span>'+
+    '<span class="dm">'+(on?"現在":kName[k])+'</span></div>';
+}).join("") + '<div class="dr'+(nowH>=23||nowH<8?" on":"")+'"><span class="dt">23:00 – 08:00</span>'+
+  '<span class="dk l"></span><span class="dl">睡覺</span>'+
+  '<span class="dm">'+(nowH>=23||nowH<8?"現在":"")+'</span></div>';
+document.getElementById("dayhead").textContent =
+  "星期"+wd[today.getDay()]+"　讀書 "+sH+" 小時"+(cH?"　課 "+cH+" 小時":"　沒有課");
+
+const tt = document.getElementById("tt");
+const H0 = 8, H1 = 23;
+let html = '<div></div>';
+const dow = today.getDay()===0 ? 7 : today.getDay();
+for (let i=0;i<7;i++) html += '<div class="hd'+(i+1===dow?" now":"")+'">'+wd[(i+1)%7]+'</div>';
+html += '<div class="col" style="grid-auto-rows:22px">';
+for (let h=H0;h<=H1;h++) html += '<div class="hr">'+(h<10?"0"+h:h)+':00</div>';
+html += '</div>';
+for (const day of SCH){
+  html += '<div class="col">';
+  let cur = H0;
+  for (const [a,b,k,label] of day){
+    const s = +a.slice(0,2), e = +b.slice(0,2);
+    if (s>cur) html += '<div style="grid-row:span '+(s-cur)+'"></div>';
+    html += '<div class="blk '+k+'" style="grid-row:span '+(e-s)+'">'+label+'</div>';
+    cur = e;
+  }
+  html += '</div>';
+}
+tt.innerHTML = html;
+
+const todo = document.getElementById("todo");
+let saved = {};
+try { saved = JSON.parse(localStorage.getItem("planner-todo") || "{}"); } catch(_) {}
+todo.innerHTML = TODO.map(([id,t,note,by])=>
+  '<li'+(saved[id]?' class="done"':'')+'><input type="checkbox" id="'+id+'"'+(saved[id]?" checked":"")+'>'+
+  '<label class="body" for="'+id+'">'+t+'<span class="note">'+note+'</span></label>'+
+  (by?'<span class="by">'+by+'</span>':'')+'</li>').join("");
+todo.addEventListener("change", ev => {
+  const li = ev.target.closest("li");
+  li.classList.toggle("done", ev.target.checked);
+  saved[ev.target.id] = ev.target.checked;
+  try { localStorage.setItem("planner-todo", JSON.stringify(saved)); } catch(_) {}
+});
+
+const svg = document.getElementById("route");
+const W = 1000, y = 46, x0 = 30, x1 = W-30;
+const span = diff(start,exam);
+const px = d => x0 + (x1-x0) * Math.min(1,Math.max(0,diff(start,d)/span));
+let s = '<line x1="'+x0+'" y1="'+y+'" x2="'+x1+'" y2="'+y+'" stroke="#C9CDC6" stroke-width="3" stroke-linecap="round"/>';
+if (today>start) s += '<line x1="'+x0+'" y1="'+y+'" x2="'+px(today)+'" y2="'+y+'" stroke="#3D6B5C" stroke-width="3" stroke-linecap="round"/>';
+const marks = [["2026-09-07","開學"],["2026-11-02","期中考"],["2026-12-18","期末考"],["2026-12-25","衝刺開始"],["2027-02-04","春節"],[EXAM_DATE,"考試"]];
+marks.forEach(([d,label],i)=>{
+  const x = px(pd(d)), up = i%2===0;
+  s += '<line x1="'+x+'" y1="'+(y-7)+'" x2="'+x+'" y2="'+(y+7)+'" stroke="#8E948B" stroke-width="1.5"/>';
+  s += '<text x="'+x+'" y="'+(up?y-16:y+26)+'" text-anchor="middle" font-size="12" fill="#6B7370" font-family="inherit">'+label+'</text>';
+  s += '<text x="'+x+'" y="'+(up?y-30:y+40)+'" text-anchor="middle" font-size="11" fill="#9AA098" font-family="inherit">'+fmt(pd(d))+'</text>';
+});
+if (today>=start && today<=exam){
+  const x = px(today);
+  s += '<circle cx="'+x+'" cy="'+y+'" r="6" fill="#A8422A"/>';
+  s += '<circle cx="'+x+'" cy="'+y+'" r="10" fill="none" stroke="#A8422A" stroke-width="1.5" opacity=".45"/>';
+}
+svg.innerHTML = svg.innerHTML + s;
+</script>
+</body>
+</html>
