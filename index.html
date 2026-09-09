@@ -57,6 +57,15 @@ button{font:inherit;font-size:13px;padding:4px 12px;border:1px solid var(--rule)
 button:hover{border-color:var(--muted)}
 button.mini{padding:3px 9px;color:var(--faint)}
 
+.timer{background:var(--paper);border:1px solid var(--rule);border-radius:10px;padding:18px 20px;margin:26px 0 0;text-align:center}
+.timer .tlab{font-size:12.5px;color:var(--faint);letter-spacing:.08em}
+.timer .tbig{font-size:52px;font-weight:500;line-height:1.1;margin:4px 0 2px;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.timer.rest .tbig{color:var(--c)}
+.timer.work .tbig{color:var(--ink)}
+.timer .tsub{color:var(--muted);font-size:13.5px;min-height:20px}
+.timer .btns{display:flex;gap:8px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.timer button{padding:6px 16px;font-size:14px}
+.timer .cyc{color:var(--faint);font-size:12.5px;margin-top:10px}
 .rule{background:var(--gs-bg);border-left:3px solid var(--gs);border-radius:0 6px 6px 0;
   padding:11px 14px;margin:26px 0 0;font-size:14px}
 .rule b{font-weight:500;color:var(--gs)}
@@ -119,7 +128,20 @@ label{cursor:pointer}
 <h2>要開哪一堂</h2>
 <div id="ticks"></div>
 
+<div class="timer" id="timer">
+  <p class="tlab" id="tlab">計時器</p>
+  <p class="tbig" id="tbig">50:00</p>
+  <p class="tsub" id="tsub">按開始，50 分鐘後它會叫你</p>
+  <div class="btns">
+    <button id="tstart">開始 50 分</button>
+    <button id="tbreak">休息 10 分</button>
+    <button id="tstop">停</button>
+  </div>
+  <p class="cyc" id="tcyc"></p>
+</div>
+
 <div class="rule"><b>卡住 40 分鐘就跳過。</b>標記起來，週日集中處理或問張老師。不要重播第八次。</div>
+<div class="rule"><b>主動休息，每 50 分停 10 分。</b>離開座位前先設好計時器。不要在檔案結尾停——看到最後五分鐘就跳下一個檔播五分鐘再休息。休息時不碰手機、不躺床。</div>
 
 <h2 style="margin-bottom:0">其他</h2>
 <details>
@@ -148,9 +170,7 @@ label{cursor:pointer}
 const EXAM_DATE="2027-02-01", TERM_START="2026-09-07";
 
 const D=[
-  ["2026-09-06","北上、進宿舍",""],
-  ["2026-09-07","開學、加退選開始","三門待審核要盯"],
-  ["2026-09-18","加退選截止","課表最後定案"],
+  ["2026-09-18","加退選截止","課表已定案，這天之後不能再動"],
   ["2026-09-25","中秋假","",1],
   ["2026-09-28","教師節","",1],
   ["2026-10-04","材力、結構題庫班開始","VOD 轉成補課工具"],
@@ -163,7 +183,8 @@ const D=[
   ["2026-10-31","校慶園遊會","11/1 校慶、11/9 補假",1],
   ["2026-11-02","期中考開始","結構(二) 認真考，等於免費模擬"],
   ["2026-11-06","期中考結束",""],
-  ["2026-12-07","下學期選課開始","環工、水資源 + 跨域 8 學分"],
+  ["2026-11-15","多益成績查詢","拿到後去註冊組登錄"],
+  ["2026-12-07","下學期選課開始","環工、水資源 + 跨域；先跑畢業資格審查"],
   ["2026-12-17","上課最後一天",""],
   ["2026-12-18","期末考開始、下學期選課截止",""],
   ["2026-12-24","期末考結束","隔天起六週衝刺"],
@@ -216,34 +237,33 @@ const NOCLASS=[["2026-08-01","2026-09-06","開學前"],["2026-12-18","2026-12-24
   ["2027-02-04","2027-02-10","春節"],["2027-02-11","2027-06-30","寒假"]];
 
 const SCH=[
- [["09:00","11:00","c","結構學(二)"],["11:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],
-  ["13:00","16:00","c","測量實習(一)"],["16:00","17:00","gs","工數"],["17:00","20:15","c","設計思考實務"],
+ [["09:00","11:00","c","結構學(二)"],["11:00","12:00","l","走動、吃東西"],["12:00","13:00","l","午餐"],
+  ["13:00","16:00","c","測量實習(一)"],["16:00","17:00","l","休息"],["17:00","20:15","c","設計思考實務"],
   ["20:15","21:00","l","晚餐"],["21:00","22:00","l","攀岩"]],
- [["09:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],["13:00","15:00","c","建築環控"],
-  ["15:00","16:00","gs","工數練題"],["16:00","18:00","c","水文學"],["18:00","19:00","l","晚餐"],
+ [["09:00","10:00","gs","工數"],["10:00","12:00","l","班週會"],["12:00","13:00","l","午餐"],["13:00","15:00","c","建築環控"],
+  ["15:00","16:00","l","休息"],["16:00","18:00","c","水文學"],["18:00","19:00","l","晚餐"],
   ["19:00","22:00","ml","材力"]],
- [["09:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],["13:00","16:00","gs","工數練題"],
+ [["09:00","12:00","gs","工數 VOD"],["12:00","13:00","l","午餐"],["13:00","16:00","gs","工數練題"],
   ["16:00","18:00","ml","材力"],["18:00","19:00","l","晚餐"],["19:00","21:00","jg","結構"],
   ["21:00","22:00","l","攀岩"]],
- [["09:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],["13:00","14:00","c","結構學(二)"],
+ [["09:00","12:00","gs","工數 VOD"],["12:00","13:00","l","午餐"],["13:00","14:00","c","結構學(二)"],
   ["14:00","18:00","ml","材力"],["18:00","19:00","l","晚餐"],["19:00","22:00","jg","結構"]],
- [["09:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],["13:00","16:00","ml","材力"],
+ [["09:00","12:00","gs","工數 VOD"],["12:00","13:00","l","午餐"],["13:00","16:00","ml","材力"],
   ["16:00","18:00","jg","結構"],["18:00","19:00","l","晚餐"],["19:00","21:00","x","補弱科"],
   ["21:00","22:00","l","攀岩"]],
- [["09:00","12:00","gs","工數練題"],["12:00","13:00","l","午餐"],["13:00","16:00","ml","材力"],
+ [["09:00","12:00","gs","工數 VOD"],["12:00","13:00","l","午餐"],["13:00","16:00","ml","材力"],
   ["16:00","17:00","l","運動"],["17:00","18:00","jg","結構"],["18:00","19:00","l","晚餐"],
   ["19:00","22:00","x","題目演練"]],
  [["09:00","12:00","jg","結構"],["12:00","13:00","x","本週回顧（三行就好）"],["13:00","14:00","l","午餐"],
-  ["14:00","19:00","l","戶外或休息"],["19:00","22:00","l","放空"]]
+  ["14:00","19:00","l","留白"],["19:00","22:00","l","留白"]]
 ];
+
 
 const STUDY=[["09:00","12:00","gs","工數"],["12:00","13:00","l","午餐"],["13:00","16:00","ml","材力"],
   ["16:00","18:00","gs","工數練題"],["18:00","19:00","l","晚餐"],["19:00","21:00","jg","結構"]];
 
 const PRE={
- "2026-09-04":[["13:00","18:00","x","前鎮圖書館：微積分 04-1、04-2（不定積分求法）"],["18:00","19:00","l","晚餐"],["19:00","21:00","l","陪家人"]],
- "2026-09-05":[["09:00","12:00","x","前鎮圖書館：微積分 05-1、05-2（不定積分收尾）"],["12:00","13:00","l","午餐"],["13:00","17:00","x","微積分 06-1（定積分）"],["18:00","19:00","l","晚餐"],["19:00","21:00","l","打包"]],
- "2026-09-06":[["09:00","12:00","x","有時間就跑微積分 06-2；沒有也沒關係"],["12:00","13:00","l","午餐"],["13:00","18:00","l","北上、進宿舍、整理"],["18:00","19:00","l","晚餐"],["19:00","21:00","l","早睡，明天開學"]]
+ "2026-09-09":[["09:00","12:00","gs","工數 01-1、01-2（微積分要訣：二重積分）"],["12:00","13:00","l","午餐"],["13:00","16:00","gs","工數練題"],["16:00","18:00","ml","材力 13"],["18:00","19:00","l","晚餐"],["19:00","21:00","jg","結構 05"],["21:00","22:00","l","攀岩"]]
 };
 
 const day1=864e5;
@@ -273,6 +293,13 @@ function planFor(d){
   return {b:SCH[(d.getDay()===0?7:d.getDay())-1],r:""};
 }
 
+function breaks(a,hrs){
+  const s=+a.slice(0,2); const out=[];
+  for(let i=0;i<hrs;i++){ const st=s+i;
+    out.push(String(st).padStart(2,"0")+":50"); }
+  return "休息 "+out.join("、")+"　每 50 分停 10 分";
+}
+
 const plan=planFor(today);
 const wkn=Math.floor(diff(start,today)/7)+1;
 document.getElementById("ctx").textContent =
@@ -299,18 +326,22 @@ const H=now.getHours()+now.getMinutes()/60;
   }
   const k=cur[2], nl=SUBJ[k]?nextL(k):null;
   el.className="now"+(k==="l"?" rest":"");
+  const cs=+cur[0].slice(0,2), ce=+cur[1].slice(0,2);
   el.innerHTML='<p class="lab">現在</p><p class="big">'+cur[3]+'</p>'+
     (nl?'<p class="sub">開第 '+nl[0]+' 堂　'+nl[1]+'</p>':'')+
-    '<p class="clock">'+cur[0]+' – '+cur[1]+'</p>';
+    '<p class="clock">'+cur[0]+' – '+cur[1]+
+    ((SUBJ[k]||k==="x")&&ce-cs>=2?'　·　'+breaks(cur[0],ce-cs):'')+'</p>';
 })();
 
 /* 今天 */
 document.getElementById("day").innerHTML = plan.b.map(([a,b,k,t])=>{
   const s=+a.slice(0,2), e=+b.slice(0,2), gone=H>=e, here=H>=s&&H<e;
   const nl=SUBJ[k]?nextL(k):null;
+  const long = (SUBJ[k]||k==="x") && e-s>=2 ? breaks(a,e-s) : "";
   return '<div class="row'+(gone?" done":"")+(here?" here":"")+'">'+
     '<span class="t">'+a+' – '+b+'</span><span class="k '+k+'"></span>'+
-    '<span class="n">'+t+(nl?'<span class="s">第 '+nl[0]+' 堂　'+nl[1]+'</span>':'')+'</span></div>';
+    '<span class="n">'+t+(nl?'<span class="s">第 '+nl[0]+' 堂　'+nl[1]+'</span>':'')+
+    (long?'<span class="s">'+long+'</span>':'')+'</span></div>';
 }).join("") + '<div class="row"><span class="t">23:00 – 08:00</span><span class="k l"></span><span class="n">睡覺</span></div>';
 
 /* 要開哪一堂 */
@@ -325,7 +356,54 @@ function ticks(){
   document.querySelectorAll(".tick button").forEach(b=>b.onclick=()=>{
     const s=SUBJ[b.dataset.k];
     s.done=Math.max(0,Math.min(s.total,s.done + +b.dataset.v));
-    save(); ticks(); progress();
+    save(); /* 計時器 */
+(function(){
+  const big=document.getElementById("tbig"), lab=document.getElementById("tlab"),
+        sub=document.getElementById("tsub"), cyc=document.getElementById("tcyc"),
+        box=document.getElementById("timer");
+  let end=0, mode="", tick=null, done=0;
+  try{ done=+(localStorage.getItem("plan-cyc-"+iso(today))||0); }catch(e){}
+  const show=()=>{ cyc.textContent = done?("今天完成 "+done+" 個 50 分區塊　約 "+(done*50/60).toFixed(1)+" 小時"):""; };
+  const fmt2=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+  function beep(){
+    try{
+      const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+      const a=new C(); const o=a.createOscillator(), g=a.createGain();
+      o.connect(g); g.connect(a.destination); o.frequency.value=660; o.type="sine";
+      g.gain.setValueAtTime(0.0001,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25,a.currentTime+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+1.4);
+      o.start(); o.stop(a.currentTime+1.5);
+    }catch(e){}
+  }
+  function stop(){ clearInterval(tick); tick=null; mode=""; box.className="timer";
+    big.textContent="50:00"; lab.textContent="計時器"; sub.textContent="按開始，50 分鐘後它會叫你"; }
+  function run(mins,m){
+    clearInterval(tick); mode=m; end=Date.now()+mins*60000;
+    box.className="timer "+(m==="work"?"work":"rest");
+    lab.textContent = m==="work"?"專注中":"休息中";
+    sub.textContent = m==="work"?"時間到就停，就算檔案播到一半":"起來走動、裝水。不要碰手機、不要躺床";
+    const upd=()=>{
+      const left=Math.max(0,Math.round((end-Date.now())/1000));
+      big.textContent=fmt2(left);
+      document.title=(m==="work"?"專注 ":"休息 ")+fmt2(left);
+      if(left<=0){
+        clearInterval(tick); tick=null; beep();
+        if(m==="work"){ done++; try{localStorage.setItem("plan-cyc-"+iso(today),done)}catch(e){} show();
+          lab.textContent="時間到"; sub.textContent="起來走動 10 分鐘"; box.className="timer rest";
+        } else { lab.textContent="休息結束"; sub.textContent="回座位，接上次沒看完的那一段"; box.className="timer work"; }
+        document.title="今天";
+      }
+    };
+    upd(); tick=setInterval(upd,250);
+  }
+  document.getElementById("tstart").onclick=()=>run(50,"work");
+  document.getElementById("tbreak").onclick=()=>run(10,"rest");
+  document.getElementById("tstop").onclick=stop;
+  show();
+})();
+
+ticks(); progress();
   });
 }
 
@@ -368,15 +446,14 @@ document.getElementById("dates").innerHTML = D.filter(e=>pd(e[0])>=today).slice(
 
 /* 待辦 */
 const TODO=[
-  ["loan","確認學貸學校是否收到","到台北後直接去學務處生輔組當面問。"],
-  ["audit","盯三門待審核","結構學(二)、測量實習(一)、水文學。9/18 前。"],
-  ["chang","找張老師","測量實習核可、上課地點，順便問結構 03/05 的卡點。"],
-  ["intern","繳實習資料、問專題怎麼登記",""],
+  ["toeic","多益考試","已報名。目標 225 以上即可，四下再修一門銜接課程。"],
+  ["audit","跑一次畢業資格審查","確認到底缺 23 還是 25，以及跨域那格缺幾學分。11 月做。"],
+  ["chang","找張老師問結構 03/05 卡點","03-1 播七次、05-1 播六次，不要再重播。"],
   ["dup","確認材力 13 與 14 是否重複","各看五分鐘。重複可省 5.5 小時。"],
   ["house","看房","唯一硬指標是安靜。晚上去聽一次。"],
   ["dorm","申請寒假住宿","1/9 到 1/11 有空窗。12 月前。"],
   ["apply","查六校簡章","台大 成大 交大 台科 北科 中央。10–11 月。"],
-  ["pick2","選四下的課","環工、水資源 + 跨域 8 學分。12/7–12/18。"]
+  ["pick2","選四下的課","環工、水資源 + 跨域；外系額度有限，注意。12/7–12/18。"]
 ];
 const todo=document.getElementById("todo");
 let sv={}; try{sv=JSON.parse(localStorage.getItem("plan-todo")||"{}")}catch(e){}
@@ -388,6 +465,53 @@ todo.addEventListener("change",ev=>{
   sv[ev.target.id]=ev.target.checked;
   try{localStorage.setItem("plan-todo",JSON.stringify(sv))}catch(e){}
 });
+
+/* 計時器 */
+(function(){
+  const big=document.getElementById("tbig"), lab=document.getElementById("tlab"),
+        sub=document.getElementById("tsub"), cyc=document.getElementById("tcyc"),
+        box=document.getElementById("timer");
+  let end=0, mode="", tick=null, done=0;
+  try{ done=+(localStorage.getItem("plan-cyc-"+iso(today))||0); }catch(e){}
+  const show=()=>{ cyc.textContent = done?("今天完成 "+done+" 個 50 分區塊　約 "+(done*50/60).toFixed(1)+" 小時"):""; };
+  const fmt2=s=>String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+  function beep(){
+    try{
+      const C=window.AudioContext||window.webkitAudioContext; if(!C) return;
+      const a=new C(); const o=a.createOscillator(), g=a.createGain();
+      o.connect(g); g.connect(a.destination); o.frequency.value=660; o.type="sine";
+      g.gain.setValueAtTime(0.0001,a.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25,a.currentTime+0.05);
+      g.gain.exponentialRampToValueAtTime(0.0001,a.currentTime+1.4);
+      o.start(); o.stop(a.currentTime+1.5);
+    }catch(e){}
+  }
+  function stop(){ clearInterval(tick); tick=null; mode=""; box.className="timer";
+    big.textContent="50:00"; lab.textContent="計時器"; sub.textContent="按開始，50 分鐘後它會叫你"; }
+  function run(mins,m){
+    clearInterval(tick); mode=m; end=Date.now()+mins*60000;
+    box.className="timer "+(m==="work"?"work":"rest");
+    lab.textContent = m==="work"?"專注中":"休息中";
+    sub.textContent = m==="work"?"時間到就停，就算檔案播到一半":"起來走動、裝水。不要碰手機、不要躺床";
+    const upd=()=>{
+      const left=Math.max(0,Math.round((end-Date.now())/1000));
+      big.textContent=fmt2(left);
+      document.title=(m==="work"?"專注 ":"休息 ")+fmt2(left);
+      if(left<=0){
+        clearInterval(tick); tick=null; beep();
+        if(m==="work"){ done++; try{localStorage.setItem("plan-cyc-"+iso(today),done)}catch(e){} show();
+          lab.textContent="時間到"; sub.textContent="起來走動 10 分鐘"; box.className="timer rest";
+        } else { lab.textContent="休息結束"; sub.textContent="回座位，接上次沒看完的那一段"; box.className="timer work"; }
+        document.title="今天";
+      }
+    };
+    upd(); tick=setInterval(upd,250);
+  }
+  document.getElementById("tstart").onclick=()=>run(50,"work");
+  document.getElementById("tbreak").onclick=()=>run(10,"rest");
+  document.getElementById("tstop").onclick=stop;
+  show();
+})();
 
 ticks(); progress();
 </script>
